@@ -1,0 +1,12 @@
+id: off-hours-admin-login
+name: Off-hours admin login
+description: Privileged account logged in outside working hours (local time of the SIEM).
+severity: medium
+enabled: true
+type: off_hours
+mitre: {id: T1078, technique: Valid Accounts, tactic: Initial Access}
+conditions: {event_type: login_success}
+users: [root, admin, administrator]
+start_hour: 22
+end_hour: 6
+group_by: user

@@ -1,0 +1,12 @@
+id: port-scan
+name: Port scan
+description: One source IP hit many different destination ports within a minute (firewall drops).
+severity: medium
+enabled: true
+type: threshold
+mitre: {id: T1046, technique: Network Service Discovery, tactic: Discovery}
+conditions: {event_type: firewall_drop}
+group_by: src_ip
+distinct: dst_port
+threshold: 6
+window: 60

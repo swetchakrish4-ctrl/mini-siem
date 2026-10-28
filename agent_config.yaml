@@ -1,0 +1,27 @@
+# Agent settings. Create the key first:  python -m app.cli create-agent lab-vm  -> paste it below.
+server_url: http://127.0.0.1:8000
+api_key: "siem_sKRxOoUey-2H_fWr4ncurYgcTe2IKwPM6AMdStVIVqo"
+verify_tls: true            # set false only for a self-signed https cert in the lab
+ca_cert: ""                # better: path to your self-signed cert.pem (e.g. cert.pem)
+
+# Active response: the server can ask this agent to block attacker IPs (needs root / Administrator).
+enable_response: false
+response_dry_run: true      # true = only log the firewall command; set false to really block
+command_poll_seconds: 10
+read_from_start: false      # true = also ship what is already in the files at startup
+batch_size: 100
+flush_interval: 2
+heartbeat_seconds: 30
+
+sources:
+  # Linux (WSL2 / VM). Delete the ones you don't have.
+  # - {type: auth_log, path: /var/log/auth.log}
+  # - {type: web_log,  path: /var/log/nginx/access.log}
+  # - {type: ufw,      path: /var/log/ufw.log}
+  # Windows Security log (run the agent in an Administrator terminal; pip install pywin32)
+  # - {type: windows_evt, channel: Security}
+
+  # Sample files written by simulator.py --mode files (works on any OS, good for a first test)
+  - {type: auth_log, path: sample_auth.log}
+  - {type: web_log,  path: sample_access.log}
+  - {type: ufw,      path: sample_ufw.log}

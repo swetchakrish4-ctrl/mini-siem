@@ -1,0 +1,182 @@
+# One config file for everything that is not a detection rule (rules live in rules/).
+# Sections: playbooks, overrides (geo), feeds (threat intel), queries (hunting library).
+
+# ============================================================ playbooks
+# Response playbooks: "when an alert matches -> do these actions".
+# when:    severity, rule_id, entity_type (ip|user|host), mitre_id   (each may be a single value or a list)
+# actions: block_ip: {minutes: N}   -> asks every agent to block the IP, auto-unblocks after N minutes
+#          notify                   -> Telegram / email (per-severity thresholds are set in .env)
+# Safety: loopback addresses, ALLOWLIST_IPS and registered agent hosts can never be blocked.
+playbooks:
+  - name: block-critical-attacker
+    when: {severity: [critical], entity_type: ip}
+    actions:
+      - block_ip: {minutes: 60}
+      - notify
+
+  - name: notify-high
+    when: {severity: [high]}
+    actions: [notify]
+
+# ============================================================ geo overrides
+# Lab-only (read by the enrichment module) geolocation for the fake documentation IP ranges used by the simulator, so the attack map works in demos.
+# Real public IPs are looked up through GeoLite2 / ip-api.com instead. Delete this file in production.
+overrides:
+  - {cidr: 203.0.113.0/24, country: Russia, city: Moscow, lat: 55.75, lon: 37.62, asn: "LAB demo attacker"}
+  - {cidr: 198.51.100.0/24, country: China, city: Beijing, lat: 39.90, lon: 116.40, asn: "LAB demo attacker"}
+  - {cidr: 192.0.2.0/24, country: Brazil, city: Sao Paulo, lat: -23.55, lon: -46.63, asn: "LAB demo attacker"}
+
+# ============================================================ threat-intel feeds
+# Free IP threat-intelligence feeds. Downloaded automatically (interval_hours) and on "Sync now" in the dashboard.
+# Only PUBLIC addresses are kept. URLs are public projects and can change - if a feed shows an error, check its home page.
+feeds:
+  - name: feodo-c2          # abuse.ch Feodo Tracker: botnet command-and-control servers
+    url: https://feodotracker.abuse.ch/downloads/ipblocklist.txt
+    enabled: true
+    interval_hours: 12
+  - name: firehol-level1    # FireHOL level 1: aggregated attack sources with very few false positives
+    url: https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level1.netset
+    enabled: true
+    interval_hours: 24
+  - name: cins-badguys      # CINS Army list: IPs that scored badly on sensors
+    url: https://cinsscore.com/list/ci-badguys.txt
+    enabled: true
+    interval_hours: 24
+  - name: blocklist-de      # blocklist.de: IPs reported for SSH/web attacks (large list)
+    url: https://lists.blocklist.de/lists/all.txt
+    enabled: false
+    interval_hours: 24
+
+# ============================================================ hunting queries
+# Starter hunting queries (read-only library). Write your own in the Hunting page and save them there.
+# Language: see DOCS.md (Hunting language)   Tables: events, alerts, threatintel
+queries:
+  - name: Top failed-login sources
+    tactic: Credential Access
+    description: Which IPs fail to log in most often, and against how many accounts.
+    query: |
+      events
+      | where event_type == "login_failed"
+      | summarize attempts = count(), users = dcount(user), last_seen = max(ts) by src_ip
+      | top 20 by attempts desc
+
+  - name: Password spraying candidates
+    tactic: Credential Access
+    description: One IP trying many different usernames.
+    query: |
+      events
+      | where event_type in ("login_failed", "invalid_user")
+      | summarize users = dcount(user), attempts = count(), tried = make_set(user, 8) by src_ip
+      | where users >= 4
+      | sort by users desc
+
+  - name: IPs that failed and then succeeded
+    tactic: Initial Access
+    description: Possible compromised accounts - failures and a success from the same source.
+    query: |
+      events
+      | where event_type in ("login_failed", "login_success")
+      | summarize failures = countif(event_type == "login_failed"), successes = countif(event_type == "login_success"), accounts = make_set(user, 5) by src_ip
+      | where failures >= 3 and successes >= 1
+      | sort by failures desc
+
+  - name: Logins outside business hours (UTC)
+    tactic: Initial Access
+    description: Successful logins before 06:00 or after 22:00 UTC.
+    query: |
+      events
+      | where event_type == "login_success"
+      | extend hour = hourofday(ts)
+      | where hour < 6 or hour >= 22
+      | project ts, host, user, src_ip, hour
+
+  - name: Users logging in from many IPs
+    tactic: Initial Access
+    description: Accounts used from more than two different addresses.
+    query: |
+      events
+      | where event_type == "login_success"
+      | summarize ips = dcount(src_ip), sources = make_set(src_ip, 10) by user
+      | where ips > 2
+      | sort by ips desc
+
+  - name: Port-scan sources
+    tactic: Discovery
+    description: IPs that hit many different destination ports.
+    query: |
+      events
+      | where event_type == "firewall_drop"
+      | summarize ports = dcount(dst_port), hits = count() by src_ip
+      | where ports > 5
+      | sort by ports desc
+
+  - name: Noisy web clients
+    tactic: Reconnaissance
+    description: Clients generating many 4xx/5xx responses across many paths (scanners, fuzzers).
+    query: |
+      events
+      | where event_type == "web_request" and details.status >= 400
+      | summarize errors = count(), paths = dcount(details.path) by src_ip
+      | where errors > 5
+      | top 20 by errors desc
+
+  - name: Rare web user agents
+    tactic: Reconnaissance
+    description: Least common User-Agent strings - attack tools stand out here.
+    query: |
+      events
+      | where event_type == "web_request"
+      | summarize hits = count(), ips = dcount(src_ip) by user_agent = details.user_agent
+      | sort by hits asc
+      | take 25
+
+  - name: sudo commands by user
+    tactic: Privilege Escalation
+    description: What privileged commands each user ran.
+    query: |
+      events
+      | where event_type == "sudo_command"
+      | summarize runs = count(), examples = make_set(details.command, 5) by user
+      | sort by runs desc
+
+  - name: New accounts created
+    tactic: Persistence
+    description: Every account creation event.
+    query: |
+      events
+      | where event_type == "user_created"
+      | project ts, host, user, raw_log
+
+  - name: Threat-intel hits
+    tactic: Reconnaissance
+    description: Events from IPs listed in the imported threat feeds.
+    query: |
+      events
+      | extend feed = ti_match(src_ip)
+      | where isnotempty(feed)
+      | summarize events = count(), last_seen = max(ts) by src_ip, feed
+      | sort by events desc
+
+  - name: VIP account activity
+    tactic: Credential Access
+    description: Everything touching accounts in the vip_users watchlist.
+    query: |
+      events
+      | where user in (_GetWatchlist("vip_users"))
+      | summarize events = count(), failures = countif(outcome == "failure") by user, host
+
+  - name: Event volume per hour and source
+    tactic: Overview
+    description: Spot sudden spikes or silent log sources.
+    query: |
+      events
+      | summarize n = count() by bin(ts, 1h), source
+      | sort by ts asc
+
+  - name: Alerts per rule
+    tactic: Overview
+    description: Which detections fire most (tuning candidates).
+    query: |
+      alerts
+      | summarize alerts = count(), last = max(ts) by rule_name, severity
+      | sort by alerts desc

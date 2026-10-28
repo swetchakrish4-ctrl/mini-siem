@@ -1,0 +1,12 @@
+id: web-sqli
+name: SQL injection attempt
+description: SQL injection patterns in the requested URL.
+severity: high
+enabled: true
+type: pattern
+mitre: {id: T1190, technique: Exploit Public-Facing Application, tactic: Initial Access}
+conditions: {event_type: web_request}
+field: details.path
+decode: url
+regex: "(?i)(union(\\s|\\+)+select|' *or *'?1'? *= *'?1|or\\s+1=1|sleep\\s*\\(|benchmark\\s*\\(|information_schema|--\\s*$|;\\s*drop\\s+table|xp_cmdshell)"
+group_by: src_ip

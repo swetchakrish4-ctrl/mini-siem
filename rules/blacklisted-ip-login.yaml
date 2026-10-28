@@ -1,0 +1,9 @@
+id: blacklisted-ip-login
+name: Login activity from blacklisted IP
+description: Login attempt from an IP listed in rules/blocklist.txt.
+severity: high
+enabled: true
+type: blacklist
+mitre: {id: T1078, technique: Valid Accounts, tactic: Initial Access}
+conditions: {event_type: [login_failed, login_success]}
+group_by: src_ip

@@ -1,0 +1,11 @@
+id: vip-failed-login
+name: Repeated failed logins on a VIP account
+description: Accounts in the 'vip_users' watchlist are watched with a much lower threshold.
+severity: high
+enabled: true
+type: threshold
+mitre: {id: T1110, technique: Brute Force, tactic: Credential Access}
+conditions: {event_type: login_failed, user: {watchlist: vip_users}}
+group_by: user
+threshold: 3
+window: 300

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mini SIEM – open-source security monitoring</title>
+<meta name="description" content="Collect logs, detect attacks with MITRE-mapped rules, hunt with KQL, correlate incidents and respond automatically.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<canvas id="rain" aria-hidden="true"></canvas>
+<nav><div class="w"><b>MINI<i>·</i>SIEM</b><a class="hide" href="#features">Features</a><a class="hide" href="#pipeline">Pipeline</a><a class="hide" href="#coverage">Coverage</a><a class="hide" href="/docs">API</a><a class="btn red" href="console.html">Launch console</a></div></nav>
+<main>
+<section class="hero"><div class="w">
+  <div class="prompt" id="typed"></div><span class="cur"></span>
+  <h1>MINI<i>·</i>SIEM</h1>
+  <p class="lead">A security monitoring platform you can run for free. Collect logs from Linux, Windows and web servers, catch attacks in real time, hunt threats with KQL, and watch every incident unfold on a live world map.</p>
+  <div class="cta"><a class="btn red" href="console.html">Launch console →</a><a class="btn" href="#features">What’s inside</a><span class="chip"><span class="dot" id="dot"></span><span id="status">checking backend…</span></span></div>
+</div></section>
+
+<section id="features"><div class="w"><h2>Features</h2><p class="sub">Everything below is built and runs in the console.</p>
+<div class="grid">
+  <div class="card"><b>Log collection</b><span>Agent for Linux and Windows, UDP syslog, disk buffering so nothing is lost when the server is down.</span></div>
+  <div class="card"><b>Detection engine</b><span>Hot-reloaded YAML rules: brute force, spraying, port scans, web attacks, privilege escalation, off-hours logins.</span></div>
+  <div class="card"><b>KQL threat hunting</b><span>Query logs with a Kusto-style language, save hunts, bookmark evidence, promote a query to a scheduled detection.</span></div>
+  <div class="card"><b>Incidents and timelines</b><span>Scan, brute force, login and new account merge into one incident that escalates automatically.</span></div>
+  <div class="card"><b>Investigation graph</b><span>Pivot from an IP to users, hosts, alerts and incidents in one click.</span></div>
+  <div class="card"><b>Live attack map</b><span>Attacker locations appear the moment an alert fires, with risk scores that decay over time.</span></div>
+  <div class="card"><b>Threat intelligence</b><span>Free blocklists imported automatically; matches raise severity and trigger alerts.</span></div>
+  <div class="card"><b>Watchlists and automation</b><span>VIP users, trusted IPs and critical hosts drive rules and auto-triage of new alerts.</span></div>
+  <div class="card"><b>Active response</b><span>Playbooks block attackers on the hosts, notify by Telegram or email, and unblock on a timer.</span></div>
+  <div class="card"><b>Behaviour analytics</b><span>Per-user login baselines and an Isolation Forest flag logins that look unlike the user.</span></div>
+  <div class="card"><b>Tamper-evident storage</b><span>SHA-256 hash chain over every event, plus roles and a full audit log.</span></div>
+  <div class="card"><b>Reports</b><span>PDF summaries and CSV exports for the review or the SOC shift handover.</span></div>
+</div></div></section>
+
+<section id="pipeline"><div class="w"><h2>Pipeline</h2><p class="sub">From a raw log line to an automatic block.</p>
+<div class="pipe"><div class="card"><b>Collect</b><span>agents, syslog</span></div><u>▸</u><div class="card"><b>Normalize</b><span>one schema</span></div><u>▸</u><div class="card"><b>Detect</b><span>rules, ML, TI</span></div><u>▸</u><div class="card"><b>Correlate</b><span>incidents</span></div><u>▸</u><div class="card"><b>Respond</b><span>block, notify</span></div></div></div></section>
+
+<section id="coverage"><div class="w"><h2>MITRE ATT&amp;CK coverage</h2><p class="sub">Every detection is tagged with a technique and shows up in the coverage heatmap.</p>
+<div class="tags"><span><em>T1110.001</em> Password Guessing</span><span><em>T1110.003</em> Password Spraying</span><span><em>T1078</em> Valid Accounts</span><span><em>T1046</em> Network Service Discovery</span><span><em>T1190</em> Exploit Public-Facing App</span><span><em>T1595</em> Active Scanning</span><span><em>T1136.001</em> Create Account</span><span><em>T1548.003</em> Sudo Abuse</span><span><em>T1562.001</em> Disable Tools</span></div></div></section>
+</main>
+<footer><div class="w">Mini SIEM · Python, FastAPI and plain JavaScript · open source · <a href="console.html" style="color:#8fb0ee">console</a> · <a href="/docs" style="color:#8fb0ee">API docs</a></div></footer>
+<script>
+const lines = ["tail -f /var/log/auth.log | siem ingest", "siem detect --rules 18 --mitre", "siem hunt 'events | summarize count() by src_ip'", "siem respond --block 203.0.113.9 --ttl 60m"];
+const t = document.getElementById("typed"); let li = 0, ci = 0, del = false;
+function tick() {
+  const s = lines[li]; t.textContent = "root@siem:~$ " + s.slice(0, ci);
+  if (!del && ci < s.length) ci++; else if (!del) { del = true; return setTimeout(tick, 1400); } else if (ci > 0) ci--; else { del = false; li = (li + 1) % lines.length; }
+  setTimeout(tick, del ? 18 : 55);
+}
+tick();
+fetch("/api/health").then(r => r.json()).then(() => { document.getElementById("dot").classList.add("on"); document.getElementById("status").textContent = "backend online"; })
+  .catch(() => { document.getElementById("status").textContent = "backend not reachable (start run.py)"; });
+if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  const c = document.getElementById("rain"), x = c.getContext("2d"); let w, h, d;
+  const size = () => { w = c.width = innerWidth; h = c.height = innerHeight; d = Array.from({length: Math.ceil(w / 16)}, () => Math.random() * h / 16); };
+  size(); addEventListener("resize", size); const ch = "01ABCDEF<>/{}$#";
+  setInterval(() => { x.fillStyle = "rgba(4,6,12,.12)"; x.fillRect(0, 0, w, h); x.font = "14px monospace";
+    d.forEach((v, i) => { x.fillStyle = Math.random() < .04 ? "#ff2d3d" : "#1d4fd8"; x.fillText(ch[Math.random() * ch.length | 0], i * 16, v * 16); d[i] = v * 16 > h && Math.random() > .975 ? 0 : v + 1; }); }, 60);
+}
+</script>
+</body>
+</html>

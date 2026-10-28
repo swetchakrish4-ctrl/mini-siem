@@ -1,0 +1,11 @@
+id: sudo-privilege-abuse
+name: Privilege escalation via sudo
+description: sudo used to manage accounts or edit sudoers / set SUID bits.
+severity: high
+enabled: true
+type: pattern
+mitre: {id: T1548.003, technique: Sudo and Sudo Caching, tactic: Privilege Escalation}
+conditions: {event_type: sudo_command}
+field: details.command
+regex: "(?i)(useradd|adduser|usermod\\s+.*(sudo|wheel)|visudo|/etc/sudoers|passwd\\s+root|chmod\\s+[ugo]?\\+s|chmod\\s+4[0-7]{3})"
+group_by: user

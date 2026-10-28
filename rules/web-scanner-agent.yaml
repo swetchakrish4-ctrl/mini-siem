@@ -1,0 +1,11 @@
+id: web-scanner-agent
+name: Security scanner user-agent
+description: Request sent by a known scanning/attack tool (sqlmap, nikto, nmap, ...).
+severity: medium
+enabled: true
+type: pattern
+mitre: {id: T1595.002, technique: Vulnerability Scanning, tactic: Reconnaissance}
+conditions: {event_type: web_request}
+field: details.user_agent
+regex: "(?i)(sqlmap|nikto|nmap|masscan|nessus|acunetix|dirbuster|gobuster|wpscan|hydra|zgrab)"
+group_by: src_ip

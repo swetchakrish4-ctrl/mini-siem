@@ -1,0 +1,11 @@
+id: login-after-bruteforce
+name: Successful login after brute force
+description: A login SUCCEEDED from an IP that just failed many times - the account is probably compromised.
+severity: critical
+enabled: true
+type: followed_by
+mitre: {id: T1078, technique: Valid Accounts, tactic: Initial Access}
+first: {conditions: {event_type: login_failed}, threshold: 5}
+then: {conditions: {event_type: login_success}}
+group_by: src_ip
+window: 600

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mini SIEM</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="login" class="center">
+  <div class="card login-card">
+    <h1>&#128737; Mini SIEM</h1>
+    <p class="muted">Security Information &amp; Event Management</p>
+    <input id="lu" placeholder="username" autocomplete="username">
+    <input id="lp" type="password" placeholder="password" autocomplete="current-password">
+    <button id="lb" class="primary">Sign in</button>
+    <div id="lerr" class="err"></div>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <aside>
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">&#128737; MINI·SIEM</a></div>
+    <nav id="nav">
+      <a href="#/overview">Overview</a>
+      <a href="#/live">Live stream</a>
+      <a href="#/map">Attack map</a>
+      <a href="#/mitre">MITRE ATT&amp;CK</a>
+      <a href="#/alerts">Alerts <span id="alertbadge" class="pill" hidden></span></a>
+      <a href="#/incidents">Incidents</a>
+      <a href="#/hunt">Threat hunting</a>
+      <a href="#/graph">Investigation graph</a>
+      <a href="#/investigate">Investigate</a>
+      <a href="#/search">Log search</a>
+      <a href="#/rules">Detection rules</a>
+      <a href="#/automation">Automation</a>
+      <a href="#/watchlists">Watchlists</a>
+      <a href="#/intel">Threat intel</a>
+      <a href="#/response">Hosts &amp; response</a>
+      <a href="#/admin" id="nav-admin">Admin</a>
+    </nav>
+    <div class="side-foot"><span id="wsdot" class="dot"></span> <span id="wslabel">live feed</span></div>
+  </aside>
+  <main>
+    <header>
+      <div id="title"></div>
+      <div><span id="who" class="muted"></span> <button id="logout">Sign out</button></div>
+    </header>
+    <section id="view"></section>
+  </main>
+</div>
+
+<div id="modal" hidden><div class="modal-box"><button id="mclose" class="x">&times;</button><div id="mbody"></div></div></div>
+<div id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

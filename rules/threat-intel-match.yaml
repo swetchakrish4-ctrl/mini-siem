@@ -1,0 +1,9 @@
+id: threat-intel-match
+name: Traffic from a known-malicious IP
+description: Source IP is listed by an imported threat-intelligence feed (config/threat_feeds.yaml).
+severity: high
+enabled: true
+type: threat_intel
+mitre: {id: T1595, technique: Active Scanning, tactic: Reconnaissance}
+conditions: {event_type: [login_failed, login_success, web_request, firewall_drop]}
+group_by: src_ip

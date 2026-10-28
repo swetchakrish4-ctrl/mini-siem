@@ -1,0 +1,10 @@
+.env
+siem.db*
+.jwt_secret
+login_iforest.joblib
+agent_buffer.db
+sample_*.log
+*.pem
+__pycache__/
+.venv/
+.pytest_cache/

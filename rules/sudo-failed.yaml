@@ -1,0 +1,11 @@
+id: sudo-failed
+name: Repeated sudo password failures
+description: A user failed sudo authentication repeatedly.
+severity: medium
+enabled: true
+type: threshold
+mitre: {id: T1548.003, technique: Sudo and Sudo Caching, tactic: Privilege Escalation}
+conditions: {event_type: sudo_failed}
+group_by: user
+threshold: 1
+window: 300

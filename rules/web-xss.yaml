@@ -1,0 +1,12 @@
+id: web-xss
+name: Cross-site scripting attempt
+description: XSS payloads in the requested URL.
+severity: medium
+enabled: true
+type: pattern
+mitre: {id: T1190, technique: Exploit Public-Facing Application, tactic: Initial Access}
+conditions: {event_type: web_request}
+field: details.path
+decode: url
+regex: "(?i)(<script|javascript:|onerror\\s*=|onload\\s*=|<svg|alert\\s*\\()"
+group_by: src_ip

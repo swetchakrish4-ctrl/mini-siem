@@ -1,0 +1,12 @@
+id: web-path-traversal
+name: Path traversal / sensitive file access
+description: Attempts to read files outside the web root.
+severity: high
+enabled: true
+type: pattern
+mitre: {id: T1190, technique: Exploit Public-Facing Application, tactic: Initial Access}
+conditions: {event_type: web_request}
+field: details.path
+decode: url
+regex: "(?i)(\\.\\./|\\.\\.\\\\|/etc/passwd|/etc/shadow|boot\\.ini|windows/system32)"
+group_by: src_ip

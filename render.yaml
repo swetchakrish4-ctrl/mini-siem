@@ -1,0 +1,24 @@
+# Optional free hosting on Render (native Python runtime, no Docker): New + -> Blueprint -> pick this repo.
+services:
+  - type: web
+    name: mini-siem
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt psycopg2-binary
+    startCommand: python run.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: SYSLOG_ENABLED
+        value: "false"
+      - key: LOCAL_UTC_OFFSET_MINUTES
+        value: "330"
+      - key: DATABASE_URL            # free Postgres URL (Neon / Supabase), see DOCS.md "Hosting"
+        sync: false

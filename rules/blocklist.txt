@@ -1,0 +1,2 @@
+# One IP per line. Used by the blacklisted-ip-login rule. Lines starting with # are ignored.
+198.51.100.66

@@ -1,0 +1,11 @@
+id: new-user-created
+name: New user account created
+description: A local account was created (useradd / Windows 4720). Attackers create accounts for persistence.
+severity: high
+enabled: true
+type: threshold
+mitre: {id: T1136.001, technique: Create Account - Local Account, tactic: Persistence}
+conditions: {event_type: user_created}
+group_by: host
+threshold: 1
+window: 60

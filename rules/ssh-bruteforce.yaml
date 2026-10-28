@@ -1,0 +1,12 @@
+id: brute-force-login
+name: Brute-force login attempts
+description: Many failed logins (SSH, Windows, ...) from one source IP in a short window.
+severity: high
+enabled: true
+type: threshold
+mitre: {id: T1110.001, technique: Password Guessing, tactic: Credential Access}
+conditions: {event_type: login_failed}
+exclude: {src_ip: {watchlist: trusted_ips}}      # ignore your own scanners / jump hosts
+group_by: src_ip
+threshold: 6
+window: 120
