@@ -127,7 +127,7 @@ def web(o, ip=None):
     o.web(ip, "/products?id=1%27%20OR%201=1--", 500, ua="sqlmap/1.7.2#stable (https://sqlmap.org)")
     o.web(ip, "/products?id=1+UNION+SELECT+username,password+FROM+users", 500)
     o.web(ip, "/search?q=%3Cscript%3Ealert(document.cookie)%3C/script%3E", 200)
-    o.web(ip, "/download?file=../../../../etc/passwd", 400, ua="Nikto/2.5.0")
+    o.web(ip, "/download?file=/etc/passwd", 400, ua="Nikto/2.5.0")
     o.web(ip, "/admin/config.php", 404, ua="Nikto/2.5.0")
 
 

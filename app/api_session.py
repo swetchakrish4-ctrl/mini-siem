@@ -12,8 +12,9 @@ from .auth import ROLE_RANK, Principal, admin, audit, get_principal
 from .config import settings
 from .crypto import hash_password, make_token, verify_password
 from .db import get_db
-from .models import User
+from .models import Agent, User
 from .parse_common import utcnow
+from .security import generate_api_key, hash_key
 
 router = APIRouter(prefix="/api", tags=["auth"])
 _attempts: dict[tuple, list[float]] = defaultdict(list)     # (client ip, username) -> failure timestamps
@@ -73,6 +74,24 @@ def create_user(body: NewUser, request: Request, db: Session = Depends(get_db), 
     db.commit()
     audit(db, who.name, "create_user", body.username, {"role": body.role}, request)
     return {"ok": True}
+
+
+class CreateAgentIn(BaseModel):
+    hostname: str = "lab-vm"
+
+
+@router.post("/agents/create")
+def api_create_agent(body: CreateAgentIn, request: Request, db: Session = Depends(get_db), who: Principal = Depends(admin)):
+    existing = db.execute(select(Agent).where(Agent.hostname == body.hostname)).scalar_one_or_none()
+    if existing:
+        # If it already exists, remove it and re-create so a new key is issued
+        db.delete(existing)
+        db.commit()
+    key = generate_api_key()
+    db.add(Agent(hostname=body.hostname, api_key_hash=hash_key(key)))
+    db.commit()
+    audit(db, who.name, "create_agent", body.hostname, None, request)
+    return {"hostname": body.hostname, "api_key": key}
 
 
 @router.delete("/users/{user_id}")
