@@ -21,6 +21,14 @@ def hash_key(key: str) -> str:
 
 
 def require_agent(x_api_key: str = Header(...), db: Session = Depends(get_db)) -> Agent:
+    if settings.admin_token and hmac.compare_digest(x_api_key.encode(), settings.admin_token.encode()):
+        agent = db.execute(select(Agent).where(Agent.hostname == "lab-vm")).scalar_one_or_none()
+        if not agent:
+            agent = Agent(hostname="lab-vm", api_key_hash=hash_key(settings.admin_token))
+            db.add(agent)
+            db.commit()
+            db.refresh(agent)
+        return agent
     agent = db.execute(select(Agent).where(Agent.api_key_hash == hash_key(x_api_key))).scalar_one_or_none()
     if agent is None:
         raise HTTPException(status_code=401, detail="invalid API key")

@@ -1,18 +1,19 @@
 """Log search, hosts and the integrity check (any logged-in user can read)."""
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, ConfigDict
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, not_, or_, select
 from sqlalchemy.orm import Session
 
-from .auth import Principal, viewer
+from .auth import Principal, admin, audit, viewer
 from .config import settings
 from .db import get_db
 from .models import Agent, Event
 from .parse_common import utcnow
 from .pipeline import verify_chain
 from .query_lang import parse_query
+from .security import generate_api_key, hash_key
 from .status import host_status
 
 router = APIRouter(prefix="/api", tags=["read"])
@@ -121,6 +122,24 @@ def list_hosts(db: Session = Depends(get_db), _: Principal = Depends(viewer)):
     return [{"hostname": a.hostname, "status": host_status(a.last_seen, now, settings.host_online_seconds, settings.host_silent_seconds),
              "last_seen": a.last_seen, "os": a.os, "ip_address": a.ip_address,
              "agent_version": a.agent_version, "sources": a.sources} for a in agents]
+
+
+class CreateHostIn(BaseModel):
+    hostname: str = Field(default="lab-vm", min_length=1, max_length=64)
+
+
+@router.post("/hosts")
+def create_host(body: CreateHostIn, request: Request, db: Session = Depends(get_db), who: Principal = Depends(admin)):
+    hostname = body.hostname.strip()
+    existing = db.execute(select(Agent).where(Agent.hostname == hostname)).scalar_one_or_none()
+    key = generate_api_key()
+    if existing:
+        existing.api_key_hash = hash_key(key)
+    else:
+        db.add(Agent(hostname=hostname, api_key_hash=hash_key(key)))
+    db.commit()
+    audit(db, who.name, "create_agent", hostname, None, request)
+    return {"hostname": hostname, "api_key": key}
 
 
 @router.get("/integrity/verify")

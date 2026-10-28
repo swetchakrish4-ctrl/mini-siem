@@ -297,13 +297,23 @@ async function hostsResponse() {
   const draw = async () => {
     const [h, b] = await Promise.all([api("/api/hosts"), api("/api/response/blocks")]);
     $("#view").innerHTML = `<div class="row"><button id="vi" class="sm">Verify log integrity</button><button id="rp" class="sm">Download PDF report (24h)</button><button id="rp7" class="sm">PDF report (7 days)</button><span id="vres" class="muted"></span></div>
-      <div class="card"><h3>Agents / hosts</h3>${table(["host", "status", "last seen", "os", "ip", "sources"], h.map(x => `<tr><td>${esc(x.hostname)}</td><td>${badge(x.status)}</td><td>${esc(fmt(x.last_seen))}</td><td>${esc(x.os || "")}</td><td>${esc(x.ip_address || "")}</td><td>${esc((x.sources || []).join(", "))}</td></tr>`))}</div>
+      <div class="card"><h3>Agents / hosts</h3>
+        ${can("admin") ? `<div class="row" style="margin-bottom:12px"><input id="new-host" placeholder="Hostname (e.g. lab-vm)" value="lab-vm" style="width:160px"><button id="add-host-btn" class="sm">Create Agent Key</button><span id="new-host-key" style="font-family:monospace;font-weight:bold;color:var(--ok)"></span></div>` : ""}
+        ${table(["host", "status", "last seen", "os", "ip", "sources"], h.map(x => `<tr><td>${esc(x.hostname)}</td><td>${badge(x.status)}</td><td>${esc(fmt(x.last_seen))}</td><td>${esc(x.os || "")}</td><td>${esc(x.ip_address || "")}</td><td>${esc((x.sources || []).join(", "))}</td></tr>`))}</div>
       <div class="card" style="margin-top:14px"><h3>Blocked IPs</h3>${can("analyst") ? `<div class="row"><input id="bip" placeholder="IP address"><input id="bmin" type="number" value="60" style="width:90px"><button id="bgo" class="danger sm">Block</button><span class="muted">minutes</span></div>` : ""}
       ${table(["ip", "active", "reason", "source", "created", "expires", ""], b.map(x => `<tr><td>${ipLink(x.ip)}</td><td>${x.active ? `<span class="badge critical">blocked</span>` : "expired"}</td><td>${esc(x.reason)}</td><td>${esc(x.source)}</td><td>${esc(fmt(x.created_at))}</td><td>${esc(x.expires_at ? fmt(x.expires_at) : "never")}</td>
         <td>${x.active && can("analyst") ? `<button class="sm" data-u="${esc(x.ip)}">Unblock</button>` : ""}</td></tr>`))}</div>
       <p class="muted">Agents apply blocks themselves (dry-run unless enabled in their config). Loopback, allow-listed and agent IPs can never be blocked.</p>`;
     $("#vi").onclick = guard(async () => { const r = await api("/api/integrity/verify"); $("#vres").textContent = r.ok ? `Chain intact - ${r.checked} events verified.` : `TAMPERING DETECTED at event #${r.first_bad_id}: ${r.reason}`; $("#vres").style.color = r.ok ? "var(--ok)" : "var(--critical)"; });
     $("#rp").onclick = guard(() => download("/api/reports/summary.pdf?days=1", "siem-report-1d.pdf")); $("#rp7").onclick = guard(() => download("/api/reports/summary.pdf?days=7", "siem-report-7d.pdf"));
+    if ($("#add-host-btn")) $("#add-host-btn").onclick = guard(async () => {
+      const hname = ($("#new-host").value || "lab-vm").trim();
+      const r = await api("/api/hosts", { method: "POST", body: { hostname: hname } });
+      $("#new-host-key").textContent = `Key: ${r.api_key}`;
+      if (navigator.clipboard) navigator.clipboard.writeText(r.api_key);
+      toast("Agent key created!");
+      draw();
+    });
     if ($("#bgo")) $("#bgo").onclick = guard(async () => { await api("/api/response/block", { method: "POST", body: { ip: $("#bip").value.trim(), minutes: +$("#bmin").value || 60, reason: "manual block" } }); toast("block requested"); draw(); });
     document.querySelectorAll("[data-u]").forEach(x => x.onclick = guard(async () => { await api("/api/response/unblock", { method: "POST", body: { ip: x.dataset.u } }); toast("unblock requested"); draw(); }));
   };
